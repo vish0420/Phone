@@ -26,6 +26,37 @@ jobs:
           if [ ! -d android ]; then
             flutter create --platforms=android --project-name viggu_audio .
           fi
+      - name: Set Android compile SDK to 36
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          candidates = [Path("android/app/build.gradle.kts"), Path("android/app/build.gradle")]
+          gradle = next((p for p in candidates if p.exists()), None)
+          if gradle is None:
+              raise SystemExit("Could not find Android app Gradle file")
+          source = gradle.read_text()
+          source, count1 = re.subn(r'(?m)^([ \\t]*compileSdk\\s*=\\s*).+
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: viggu-audio-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+, r'\\g<1>36', source)
+          source, count2 = re.subn(r'(?m)^([ \\t]*compileSdkVersion\\s+).+
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: viggu-audio-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+, r'\\g<1>36', source)
+          if count1 + count2 == 0:
+              raise SystemExit(f"Could not locate compileSdk setting in {gradle}")
+          gradle.write_text(source)
+          print(f"Set compile SDK to 36 in {gradle}")
+          PY
       - run: flutter pub get
       - run: flutter build apk --debug
       - uses: actions/upload-artifact@v4
