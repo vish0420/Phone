@@ -31,30 +31,25 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+
           candidates = [Path("android/app/build.gradle.kts"), Path("android/app/build.gradle")]
-          gradle = next((p for p in candidates if p.exists()), None)
+          gradle = next((path for path in candidates if path.exists()), None)
           if gradle is None:
               raise SystemExit("Could not find Android app Gradle file")
-          source = gradle.read_text()
-          source, count1 = re.subn(r'(?m)^([ \\t]*compileSdk\\s*=\\s*).+
-      - run: flutter build apk --debug
-      - uses: actions/upload-artifact@v4
-        with:
-          name: viggu-audio-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
-, r'\\g<1>36', source)
-          source, count2 = re.subn(r'(?m)^([ \\t]*compileSdkVersion\\s+).+
-      - run: flutter build apk --debug
-      - uses: actions/upload-artifact@v4
-        with:
-          name: viggu-audio-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
-, r'\\g<1>36', source)
-          if count1 + count2 == 0:
+
+          lines = gradle.read_text().splitlines()
+          changed = False
+          for index, line in enumerate(lines):
+              if re.match(r"^\s*compileSdk\s*=", line):
+                  lines[index] = re.sub(r"compileSdk\s*=.*$", "compileSdk = 36", line)
+                  changed = True
+              elif re.match(r"^\s*compileSdkVersion\s+", line):
+                  lines[index] = re.sub(r"compileSdkVersion\s+.*$", "compileSdkVersion 36", line)
+                  changed = True
+
+          if not changed:
               raise SystemExit(f"Could not locate compileSdk setting in {gradle}")
-          gradle.write_text(source)
+          gradle.write_text("\n".join(lines) + "\n")
           print(f"Set compile SDK to 36 in {gradle}")
           PY
       - run: flutter pub get
