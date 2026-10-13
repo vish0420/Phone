@@ -12,34 +12,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - name: Create Android Flutter project if platform files are missing
-        shell: bash
+      - name: Prepare Android platform
         run: |
-          if [ ! -f pubspec.yaml ]; then
-            echo "Missing pubspec.yaml. Upload the Flutter project source before running this workflow."
-            exit 1
-          fi
           if [ ! -d android ]; then
             flutter create --platforms=android --project-name viggu_audio .
           fi
-      - name: Get dependencies
-        run: flutter pub get
-      - name: Build debug APK
-        run: flutter build apk --debug
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - run: flutter pub get
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
         with:
           name: viggu-audio-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
