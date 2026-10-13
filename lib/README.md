@@ -1,0 +1,1 @@
+This folder contains Viggu Audio Flutter app source. The initial UI build provides Home, Library, Settings, theme and gradient choices, a floating resume action, and Now Playing preview. This is UI scaffold only; local media picker/player engine integration follows in the next phase.
